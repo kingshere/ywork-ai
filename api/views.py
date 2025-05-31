@@ -18,11 +18,11 @@ from googleapiclient.discovery import build
 from .models import Order, UserProfile
 from .serializers import OrderSerializer, UserProfileSerializer
 
-# Google OAuth2 views
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def google_auth(request):
-    # Create the flow using the client secrets file
+    
     flow = Flow.from_client_config(
         {
             "web": {
@@ -36,8 +36,7 @@ def google_auth(request):
         scopes=['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
-    
-    # Generate the authorization URL
+
     auth_url, _ = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
@@ -49,12 +48,11 @@ def google_auth(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def google_callback(request):
-    # Get the authorization code from the request
+   
     code = request.GET.get('code')
     if not code:
         return Response({'error': 'Authorization code not found'}, status=status.HTTP_400_BAD_REQUEST)
     
-    # Create the flow using the client secrets file
     flow = Flow.from_client_config(
         {
             "web": {
@@ -69,29 +67,28 @@ def google_callback(request):
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
     
-    # Exchange the authorization code for credentials
+   
     flow.fetch_token(code=code)
     credentials = flow.credentials
-    
-    # Get user info from Google
+  
     service = build('oauth2', 'v2', credentials=credentials)
     user_info = service.userinfo().get().execute()
     
-    # Get or create user
+   
     try:
         profile = UserProfile.objects.get(google_id=user_info['id'])
         user = profile.user
-        # Update tokens
+       
         profile.access_token = credentials.token
         profile.refresh_token = credentials.refresh_token or profile.refresh_token
         profile.token_expiry = timezone.now() + timezone.timedelta(seconds=credentials.expires_in)
         profile.save()
     except UserProfile.DoesNotExist:
-        # Create a new user
+   
         email = user_info.get('email')
         username = email.split('@')[0] if email else user_info.get('id')
         
-        # Check if username exists and modify if needed
+        
         base_username = username
         counter = 1
         while User.objects.filter(username=username).exists():
@@ -113,7 +110,7 @@ def google_callback(request):
             token_expiry=timezone.now() + timezone.timedelta(seconds=credentials.expires_in)
         )
     
-    # Return the access token and user info
+    
     return Response({
         'access_token': credentials.token,
         'refresh_token': credentials.refresh_token,
@@ -127,17 +124,17 @@ def google_callback(request):
         }
     })
 
-# Order API views
+
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # Filter orders by the authenticated user
+     
         user = self.request.user
         queryset = Order.objects.filter(user=user)
         
-        # Filter by title if provided
+        
         title = self.request.query_params.get('title', None)
         if title is not None:
             queryset = queryset.filter(title__icontains=title)
@@ -145,5 +142,5 @@ class OrderViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
-        # Set the user to the authenticated user
+        
         serializer.save(user=self.request.user)
