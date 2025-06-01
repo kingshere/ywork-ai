@@ -7,12 +7,6 @@
 
 A robust Django REST Framework-based order management system with Google OAuth 2.0 authentication, providing secure and efficient data entry and retrieval APIs.
 
-## MEDIA 
-![MEDIA 1](media/yworkai1.png)
-![MEDIA 2](media/yworkai2.png)
-![NMEDIA 3](media/yworkai3.png)
-
-LOOP VIDEO LINK : https://www.loom.com/share/41561e4a7f584dfca4b73204314ff0cd?sid=69213a2e-2dad-45b8-a8d4-11be585245d0
 
 ## Features
 
